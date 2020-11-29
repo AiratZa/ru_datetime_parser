@@ -1,11 +1,15 @@
-from word2number import extractor as extr
 import re
 import datetime
 
 from sets import *
 
+def get_str_time_formatted(time_finish, with_HM=True):
+    if (with_HM):
+        return time_finish.strftime('%Y-%m-%dT%H:%M')
+    return time_finish.strftime('%Y-%m-%d')
+    # return current_datetime.strftime('%d-%m-%Y')
 
-extractor = extr.NumberExtractor()
+
  
 def has_one_of_lemmas(splitted_word, key_values):
     for key in key_values:
@@ -88,19 +92,24 @@ def covert_string_to_keys(splitted_all):
 class RuDateTimeParser():
 
 
-
-    def __init__(self, string_at_start):
+    def __init__(self, string_at_start, current_datetime):
         """Constructor"""
         self._converted_to_tokens = ''
+        # print(string_at_start)
         self._is_period = False
-        self._string_at_start = extractor.replace_groups(string_at_start.lower())
+        self._string_at_start = string_at_start
         self._splitted_all = self._string_at_start.split()
         self._current_token_index = 0
         self._dates = []
         self._splitted_with_tokens_indexes = self._string_at_start.split()
+        self._current_datetime = current_datetime
+        self._period_times_finish = [current_datetime, current_datetime]
+        self._time_finish = current_datetime
+        self.delta = {'days': 0, 'weeks': 0, 'hours': 0, 'minutes': 0}
 
 
-
+    def get_cur_time(self):
+        return self._current_datetime
 
 
     def get_converted_to_tokens(self):
@@ -125,3 +134,22 @@ class RuDateTimeParser():
 
     def get_dates(self):
         return self._dates
+
+    def skip_other_words(self):
+        while (len(self.get_current_tokens()) and self.get_current_tokens()[0] == '_'):
+            self.incr_current_token_index()
+
+    def get_answer(self):
+        self._time_finish = self._current_datetime + datetime.timedelta(
+                                                    days=self.delta['days'],
+                                                    weeks=self.delta['weeks'],
+                                                    hours=self.delta['hours'],
+                                                    minutes=self.delta['minutes'],
+                                                )
+        return get_str_time_formatted(self._time_finish)
+
+    def convert_to_answer(self):
+        if ('W' in self._splitted_with_tokens_indexes):
+            if (weekday := self.get_cur_time().weekday()) not in (5, 6):
+                self.delta['days'] += 5 - weekday
+
