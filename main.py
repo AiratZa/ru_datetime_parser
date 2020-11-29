@@ -1,95 +1,9 @@
 import pandas as pd
 import datetime
-import re
-
-from word2number import extractor as extr
-
-from sets import *
 
 
-def has_one_of_lemmas(splitted_word, key_values):
-    for key in key_values:
-        if splitted_word in (key, *key_values[key]):
-            return True
-    return False
-
-
-def covert_string_to_keys(string_at_start):
-    splitted_all = string_at_start.split()
-    cur_index = 0
-    answer = ''
-
-    for splitted in splitted_all:
-        if (has_one_of_lemmas(splitted, year_key)):
-            answer += 'Y'
-        elif (has_one_of_lemmas(splitted, months)):
-            answer += 'M'
-        elif (has_one_of_lemmas(splitted, weeks)):
-            answer += 'D'
-        elif (has_one_of_lemmas(splitted, back_time_keyword)):
-            answer += 'b'
-        elif (has_one_of_lemmas(splitted, forward_time_keyword)):
-            answer += 'l'
-        elif (has_one_of_lemmas(splitted, weekend)):
-            answer += 'W'
-        elif (has_one_of_lemmas(splitted, minute_keyword)):
-            answer += 'e'
-        elif (has_one_of_lemmas(splitted, hour_keyword)):
-            answer += 'h'
-        elif (has_one_of_lemmas(splitted, day_keyword)):
-            answer += 'd'
-        elif (has_one_of_lemmas(splitted, week_keyword)):
-            answer += 'w'
-        elif (has_one_of_lemmas(splitted, months_keyword)):
-            answer += 'm'
-        elif (has_one_of_lemmas(splitted, adj_back_time_keyword)):
-            answer += 's'
-        elif (has_one_of_lemmas(splitted, adj_current_time_keyword)):
-            answer += 'u'
-        elif (has_one_of_lemmas(splitted, adj_future_time_keyword)):
-            answer += 'x'
-        elif (has_one_of_lemmas(splitted, bb_day_keyword)):
-            answer += '2'
-        elif (has_one_of_lemmas(splitted, b_day_keyword)):
-            answer += '3'
-        elif (has_one_of_lemmas(splitted, today_day_keyword)):
-            answer += '4'
-        elif (has_one_of_lemmas(splitted, f_day_keyword)):
-            answer += '5'
-        elif (has_one_of_lemmas(splitted, ff_day_keyword)):
-            answer += '6'
-        elif (has_one_of_lemmas(splitted, morning_keyword)):
-            answer += 'r'
-        elif (has_one_of_lemmas(splitted, noon_keyword)):
-            answer += 'n'
-        elif (has_one_of_lemmas(splitted, evening_keyword)):
-            answer += 'v'
-        elif (has_one_of_lemmas(splitted, night_keyword)):
-            answer += 'g'
-        elif (has_one_of_lemmas(splitted, half_keyword)):
-            answer += 'H'
-        elif (has_one_of_lemmas(splitted, quater_keyword)):
-            answer += 'Q'
-        elif (re.match(r'^\d+', splitted)):
-            answer += '1'
-        elif (has_one_of_lemmas(splitted, from_keyword)):
-            answer += 'f'
-        elif (has_one_of_lemmas(splitted, to_keyword)):
-            answer += 't'
-        elif (has_one_of_lemmas(splitted, to_what_keyword)):
-            answer += 'o'
-        elif (has_one_of_lemmas(splitted, number_keyword)):
-            answer += '#'
-        elif splitted == 'и':
-            answer += 'N'
-        else:
-            answer += '_'
-        cur_index += 1
-
-    return answer
-
-
-
+from ru_datetime_parser import RuDateTimeParser, covert_string_to_keys
+from pattern_handlers.time_handlers import *
 
 # period_key_words = ['протяжении', 'с', 'по', '-', 'всю', 'за', 'до']
 
@@ -180,13 +94,71 @@ def covert_string_to_keys(string_at_start):
 #             our_time = create_timestamp_with_nulls_to_time_params(current_datetime, ['minute', 'hour'])
 #             print(f"{row:55} - {get_str_time_formatted(our_time, params['with_HM'])}")
 
+def get_max_len_str_with_dates(text, collapse_distance):
+    count_with_date = 0
+    count_with_date_saved = count_with_date
+    i = 0
+    while (i < len(text)):
+        if (text[i] != '_'):
+            count_with_date += 1
+            i += 1
+        count_another = 0
+        count_with_date_saved = count_with_date
+        while (i < len(text) and text[i] == '_' and count_another <= collapse_distance):
+            count_with_date += 1
+            i += 1
+        if (i >= 4):
+            return count_with_date_saved
+    return count_with_date
+
 
 if __name__ == '__main__':
-    extractor = extr.NumberExtractor()
+    answers = []
+    collapse_distance = 3
+    current_datetime = datetime.datetime.now()
+
+    start = WeekendHandler()
+    weekend = DatesPeriodHandler()
+    start.set_next(weekend).set_next
+    
     text = input("Введите дату:  ")
-    text = extractor.replace_groups(text.lower()) 
-    result = covert_string_to_keys(text)
-    print(result)
+
+    text_splitted = text.split()
+
+    i = 0
+    tokenized = covert_string_to_keys(text_splitted)
+    while (i < len(tokenized)):
+        count_another = 0
+        while (i < len(tokenized) and tokenized[i] == '_'):
+            count_another += 1
+            i += 1
+        if (count_another <= 3):
+            while (i < len(tokenized)):
+                len_wordcount_with_date = get_max_len_str_with_dates(tokenized[i:], collapse_distance)
+                instance = RuDateTimeParser(' '.join(text_splitted[i : i + len_wordcount_with_date]))
+                instance.set_converted_to_tokens(tokenized[i : i + len_wordcount_with_date])
+                i += len_wordcount_with_date
+                answers.append(instance)
+                start.handle(instance)
+                print(instance.get_converted_to_tokens())
+                print(instance.get_dates())
+
+    # month_day_ = DayMonthHandler()
+    # dates_period_handler = DatesPeriodHandler()
+
+
+    
+
+
+    # # Клиент должен иметь возможность отправлять запрос любому обработчику, а не
+    # # только первому в цепочке.
+    # print("Chain: Monkey > Squirrel > Dog")
+    # client_code(monkey)
+    # print("\n")
+
+    # print("Subchain: Squirrel > Dog")
+    # client_code(squirrel)
+    # print(result)
     # for i in months['янв']:
         # print(i)
     # dataset = pd.read_csv('../retropress/srcs.csv', delimiter=',').values.tolist()
