@@ -1,155 +1,146 @@
 import re
 import datetime
-
+from pattern_handlers.time_handlers import handle_time_patterns
 from sets import *
 
-def get_str_time_formatted(time_finish, with_HM=True):
-    if (with_HM):
+from word2number import extractor
+from typing import Optional
+
+
+def replace_char_numbers_to_digits(initial_string: str) -> str:
+    extractor_obj = extractor.NumberExtractor()
+    return extractor_obj.replace_groups(initial_string)
+
+
+def get_str_time_formatted(time_finish, with_hm=True):
+    if with_hm:
         return time_finish.strftime('%Y-%m-%dT%H:%M')
     return time_finish.strftime('%Y-%m-%d')
-    # return current_datetime.strftime('%d-%m-%Y')
 
 
- 
 def has_one_of_lemmas(splitted_word, key_values):
     for key in key_values:
         if splitted_word in (key, *key_values[key]):
             return True
     return False
-def covert_string_to_keys(splitted_all):
-    cur_index = 0
-    answer = ''
-
-    for splitted in splitted_all:
-        if (has_one_of_lemmas(splitted, year_key)):
-            answer += 'Y'
-        elif (has_one_of_lemmas(splitted, months)):
-            answer += 'M'
-        elif (has_one_of_lemmas(splitted, weeks)):
-            answer += 'D'
-        elif (has_one_of_lemmas(splitted, back_time_keyword)):
-            answer += 'b'
-        elif (has_one_of_lemmas(splitted, forward_time_keyword)):
-            answer += 'l'
-        elif (has_one_of_lemmas(splitted, weekend)):
-            answer += 'W'
-        elif (has_one_of_lemmas(splitted, minute_keyword)):
-            answer += 'e'
-        elif (has_one_of_lemmas(splitted, hour_keyword)):
-            answer += 'h'
-        elif (has_one_of_lemmas(splitted, day_keyword)):
-            answer += 'd'
-        elif (has_one_of_lemmas(splitted, week_keyword)):
-            answer += 'w'
-        elif (has_one_of_lemmas(splitted, months_keyword)):
-            answer += 'm'
-        elif (has_one_of_lemmas(splitted, adj_back_time_keyword)):
-            answer += 's'
-        elif (has_one_of_lemmas(splitted, adj_current_time_keyword)):
-            answer += 'u'
-        elif (has_one_of_lemmas(splitted, adj_future_time_keyword)):
-            answer += 'x'
-        elif (has_one_of_lemmas(splitted, bb_day_keyword)):
-            answer += '2'
-        elif (has_one_of_lemmas(splitted, b_day_keyword)):
-            answer += '3'
-        elif (has_one_of_lemmas(splitted, today_day_keyword)):
-            answer += '4'
-        elif (has_one_of_lemmas(splitted, f_day_keyword)):
-            answer += '5'
-        elif (has_one_of_lemmas(splitted, ff_day_keyword)):
-            answer += '6'
-        elif (has_one_of_lemmas(splitted, morning_keyword)):
-            answer += 'r'
-        elif (has_one_of_lemmas(splitted, noon_keyword)):
-            answer += 'n'
-        elif (has_one_of_lemmas(splitted, evening_keyword)):
-            answer += 'v'
-        elif (has_one_of_lemmas(splitted, night_keyword)):
-            answer += 'g'
-        elif (has_one_of_lemmas(splitted, half_keyword)):
-            answer += 'H'
-        elif (has_one_of_lemmas(splitted, quater_keyword)):
-            answer += 'Q'
-        elif (re.match(r'^\d+', splitted)):
-            answer += '1'
-        elif (has_one_of_lemmas(splitted, from_keyword)):
-            answer += 'f'
-        elif (has_one_of_lemmas(splitted, to_keyword)):
-            answer += 't'
-        elif (has_one_of_lemmas(splitted, to_what_keyword)):
-            answer += 'o'
-        elif (has_one_of_lemmas(splitted, number_keyword)):
-            answer += '#'
-        elif splitted == 'и':
-            answer += 'N'
-        else:
-            answer += '_'
-        cur_index += 1
-    return answer
 
 
-class RuDateTimeParser():
+class RuDateTimeParser:
 
-
-    def __init__(self, string_at_start, current_datetime):
+    def __init__(self, string_at_start, initial_time=datetime.datetime.now(), max_collapse_distance=2):
         """Constructor"""
-        self._converted_to_tokens = ''
-        # print(string_at_start)
         self._is_period = False
         self._string_at_start = string_at_start
-        self._splitted_all = self._string_at_start.split()
-        self._current_token_index = 0
-        self._dates = []
-        self._splitted_with_tokens_indexes = self._string_at_start.split()
-        self._current_datetime = current_datetime
-        self._period_times_finish = [current_datetime, current_datetime]
-        self._time_finish = current_datetime
-        self.delta = {'days': 0, 'weeks': 0, 'hours': 0, 'minutes': 0}
+        self._parse_ready_str = replace_char_numbers_to_digits(string_at_start.lower())
+        self._text_splitted = self._parse_ready_str.split()
+        self._tokenized = self.covert_string_to_tokens()
+        self._initial_time = initial_time
+        self._max_collapse_distance = max_collapse_distance
 
+    def parse_text(self):
+        parsed = handle_time_patterns(self._text_splitted, self._tokenized)
+        print(self._tokenized, '   ', self._text_splitted, '   ', end='')
+        collapsed = self.collapse(parsed=parsed)
+        print(collapsed)
 
-    def get_cur_time(self):
-        return self._current_datetime
+    def collapse(self, parsed):
+        i: int = 0
+        len_p = len(parsed)
+        delta_time: Optional[datetime.timedelta] = None
+        has_initial_time = False
+        with_hm = False
+        while (i < len_p):
+            count_non_time = 0
+            while i < len_p and parsed[i][0] == '_':
+                count_non_time += 1
+                i += 1
+            if count_non_time > self._max_collapse_distance:
+                break
+            if type(parsed[i][0]) is not datetime.timedelta:
+                raise Exception
+                # return 'BREAK'
+            if not has_initial_time:
+                delta_time = parsed[i][0]
+                has_initial_time = True
+            if parsed[i][2]:
+                with_hm = True
+            delta_time += parsed[i][0]
+            i += 1
 
+        if delta_time is None:
+            return 'NONE'
+        return get_str_time_formatted(self._initial_time + delta_time, with_hm=with_hm)
 
-    def get_converted_to_tokens(self):
-        return self._converted_to_tokens
+    def covert_string_to_tokens(self):
+        cur_index = 0
+        answer = ''
 
-    def set_converted_to_tokens(self, value):
-        self._converted_to_tokens = value
-
-
-    def get_current_tokens(self):
-        return self._converted_to_tokens[self._current_token_index:]
-
-    def incr_current_token_index(self):
-        self._current_token_index += 1
-
-    def push_back_date_and_set_index_in_text(self, result):
-        result_len = len(result.group(0))
-        for i in range(result_len):
-            self._dates.append(self._splitted_all[self._current_token_index])
-            self._splitted_with_tokens_indexes[self._current_token_index] = len(self._dates) - 1
-            self.incr_current_token_index()
-
-    def get_dates(self):
-        return self._dates
-
-    def skip_other_words(self):
-        while (len(self.get_current_tokens()) and self.get_current_tokens()[0] == '_'):
-            self.incr_current_token_index()
-
-    def get_answer(self):
-        self._time_finish = self._current_datetime + datetime.timedelta(
-                                                    days=self.delta['days'],
-                                                    weeks=self.delta['weeks'],
-                                                    hours=self.delta['hours'],
-                                                    minutes=self.delta['minutes'],
-                                                )
-        return get_str_time_formatted(self._time_finish)
-
-    def convert_to_answer(self):
-        if ('W' in self._splitted_with_tokens_indexes):
-            if (weekday := self.get_cur_time().weekday()) not in (5, 6):
-                self.delta['days'] += 5 - weekday
-
+        for splitted in self._text_splitted:
+            if has_one_of_lemmas(splitted, year_key):
+                answer += 'Y'
+            elif has_one_of_lemmas(splitted, months):
+                answer += 'M'
+            elif has_one_of_lemmas(splitted, weeks):
+                answer += 'D'
+            elif has_one_of_lemmas(splitted, back_time_keyword):
+                answer += 'b'
+            elif has_one_of_lemmas(splitted, forward_time_keyword):
+                answer += 'l'
+            elif has_one_of_lemmas(splitted, weekend):
+                answer += 'W'
+            elif has_one_of_lemmas(splitted, minute_keyword):
+                answer += 'e'
+            elif has_one_of_lemmas(splitted, hour_keyword):
+                answer += 'h'
+            elif has_one_of_lemmas(splitted, day_keyword):
+                answer += 'd'
+            elif has_one_of_lemmas(splitted, week_keyword):
+                answer += 'w'
+            elif has_one_of_lemmas(splitted, months_keyword):
+                answer += 'm'
+            elif has_one_of_lemmas(splitted, adj_back_time_keyword):
+                answer += 's'
+            elif has_one_of_lemmas(splitted, adj_current_time_keyword):
+                answer += 'u'
+            elif has_one_of_lemmas(splitted, adj_future_time_keyword):
+                answer += 'x'
+            elif has_one_of_lemmas(splitted, bb_day_keyword):
+                answer += '2'
+            elif has_one_of_lemmas(splitted, b_day_keyword):
+                answer += '3'
+            elif has_one_of_lemmas(splitted, today_day_keyword):
+                answer += '4'
+            elif has_one_of_lemmas(splitted, f_day_keyword):
+                answer += '5'
+            elif has_one_of_lemmas(splitted, ff_day_keyword):
+                answer += '6'
+            elif has_one_of_lemmas(splitted, morning_keyword):
+                answer += 'r'
+            elif has_one_of_lemmas(splitted, noon_keyword):
+                answer += 'n'
+            elif has_one_of_lemmas(splitted, evening_keyword):
+                answer += 'v'
+            elif has_one_of_lemmas(splitted, night_keyword):
+                answer += 'g'
+            elif has_one_of_lemmas(splitted, half_keyword):
+                answer += 'H'
+            elif has_one_of_lemmas(splitted, quater_keyword):
+                answer += 'Q'
+            elif re.match(r'^\d+', splitted):
+                answer += '1'
+            elif has_one_of_lemmas(splitted, from_keyword):
+                answer += 'f'
+            elif has_one_of_lemmas(splitted, to_keyword):
+                answer += 't'
+            elif has_one_of_lemmas(splitted, to_what_keyword):
+                answer += 'o'
+            elif has_one_of_lemmas(splitted, now_time_keyword):
+                answer += 'O'
+            elif has_one_of_lemmas(splitted, number_keyword):
+                answer += '#'
+            elif splitted == 'и':
+                answer += 'N'
+            else:
+                answer += '_'
+            cur_index += 1
+        return answer

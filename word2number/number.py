@@ -1,7 +1,7 @@
 from yargy import rule, or_
 from yargy.pipelines import morph_pipeline, caseless_pipeline
 from yargy.interpretation import fact, const
-from yargy.predicates import eq, caseless, normalized, type
+from yargy.predicates import eq, caseless, normalized, type # type: ignore
 
 Number = fact('Number', ['int', 'multiplier'])
 NUMS_RAW = {

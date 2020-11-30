@@ -47,6 +47,10 @@ adj_current_time_keyword = {
     'сей': ('сей', ),
 }
 
+now_time_keyword = {
+    'сейчас': ('сейчас', ),
+}
+
 adj_future_time_keyword = {
     'ближайший': tuple(i.word for i in morph.parse('ближайший')[0].lexeme),
     'грядущий': tuple(i.word for i in morph.parse('грядущий')[0].lexeme),

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 
 class Handler(ABC):
@@ -14,9 +14,8 @@ class Handler(ABC):
         pass
 
     @abstractmethod
-    def handle(self, tokens) -> Optional[str]:
+    def handle(self, tokens) -> tuple:
         pass
-
 
 
 class AbstractHandler(Handler):
@@ -35,8 +34,7 @@ class AbstractHandler(Handler):
         return handler
 
     @abstractmethod
-    def handle(self, tokens: Any) -> str:
+    def handle(self, tokens: Any) -> tuple:
         if self._next_handler:
             return self._next_handler.handle(tokens)
-
-        return None
+        return '_', 1
