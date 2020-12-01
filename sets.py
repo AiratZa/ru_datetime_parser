@@ -28,7 +28,8 @@ weeks = {
 }
 
 back_time_keyword = {
-    'назад': tuple(i.word for i in morph.parse('назад')[0].lexeme),
+    'тому назад': ('тому назад', ),
+    'назад': ('назад', ),
 }
 
 adj_back_time_keyword = {
@@ -158,7 +159,8 @@ months_keyword = {
 }
 
 forward_time_keyword = {
-    'спустя': tuple(i.word for i in morph.parse('спустя')[0].lexeme),
+    'тому спустя': ('тому спустя', ),
+    'спустя': ('спустя', ),
     'через': tuple(i.word for i in morph.parse('через')[0].lexeme),
 }
 

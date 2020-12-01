@@ -14,7 +14,7 @@ class Handler(ABC):
         pass
 
     @abstractmethod
-    def handle(self, tokens) -> tuple:
+    def handle(self, tokens, splitted_text: list) -> tuple:
         pass
 
 
@@ -34,9 +34,9 @@ class AbstractHandler(Handler):
         return handler
 
     @abstractmethod
-    def handle(self, tokens: Any) -> tuple:
+    def handle(self, tokens: Any, splitted_text: list) -> tuple:
         # print(self._next_handler, is_period)
         if self._next_handler:
-            return self._next_handler.handle(tokens)
+            return self._next_handler.handle(tokens, splitted_text)
         # print('finish')
         return '_', 1

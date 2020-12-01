@@ -20,7 +20,7 @@ class TestSum(unittest.TestCase):
             data = list(reader)
         firstline = True
         self.testsLength = len(data) - 1
-        for row in data[:10]:
+        for row in data[9:20]:
             if firstline:    #skip first line
                 firstline = False
                 continue
@@ -35,17 +35,26 @@ class TestSum(unittest.TestCase):
             self.result.append(answer)
 
     def tearDown(self):
-        self.assertEqual([], self.verificationErrors)
+        pass
+        # self.assertEqual([], self.verificationErrors)
 
     def test_list_eq(self):
-        for r, exp in zip(self.result, self.expected):
-            with self.subTest(msg='Equal check'):
-                self.assertEqual(r, exp)
+        pass
+        # for r, exp in zip(self.result, self.expected):
+        #     with self.subTest(msg='Equal check'):
+        #         self.assertEqual(r, exp)
 
 
 if __name__ == '__main__':
-    unittest.main()
+    # unittest.main()
+    inst = RuDateTimeParser('2 дня 3 часа и 5 минут назад', )
+    answer = inst.parse_text()
 
+# initial_time=datetime.datetime(year=2020,
+#                                                             month=11,
+#                                                             day=27,
+#                                                             hour=2,
+#                                                             minute=30)
 
 # import pandas as pd
 # from ru_datetime_parser import RuDateTimeParser

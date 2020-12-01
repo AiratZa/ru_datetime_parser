@@ -3,9 +3,10 @@ import datetime
 from pattern_handlers.time_handlers import handle_time_patterns
 from sets import *
 
+
 from word2number import extractor
 from typing import Optional
-
+from dateutil import relativedelta
 
 def replace_char_numbers_to_digits(initial_string: str) -> str:
     extractor_obj = extractor.NumberExtractor()
@@ -55,7 +56,7 @@ class RuDateTimeParser:
         is_period = False
         # print('')
         # print('')
-        # print(parsed)
+        print(parsed)
         while (i < len_p):
             count_non_time = 0
             # print('|||', parsed[i][0], '|||')
@@ -64,17 +65,19 @@ class RuDateTimeParser:
                 i += 1
             if count_non_time > self._max_collapse_distance:
                 break
-            if type(parsed[i][0]) is not datetime.timedelta:
+            if type(parsed[i][0]) not in (datetime.timedelta, relativedelta.relativedelta):
                 raise Exception
                 # return 'BREAK'
             if not has_initial_time:
                 delta_time = parsed[i][0]
                 has_initial_time = True
+            else:
+                delta_time += parsed[i][0]
             if parsed[i][2]:
                 with_hm = True
             if not is_period:
                 is_period = parsed[i][3]
-            delta_time += parsed[i][0]
+            # print(delta_time)
             i += (1 + parsed[i][1])
 
         if delta_time is None:
