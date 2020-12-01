@@ -35,6 +35,8 @@ class AbstractHandler(Handler):
 
     @abstractmethod
     def handle(self, tokens: Any) -> tuple:
+        # print(self._next_handler, is_period)
         if self._next_handler:
             return self._next_handler.handle(tokens)
+        # print('finish')
         return '_', 1

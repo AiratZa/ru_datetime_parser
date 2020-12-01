@@ -14,6 +14,8 @@ def replace_char_numbers_to_digits(initial_string: str) -> str:
 
 def get_str_time_formatted(time_finish, with_hm=True):
     if with_hm:
+        if time_finish.hour < 10:
+            return time_finish.strftime('%Y-%m-%dT%#H:%M')
         return time_finish.strftime('%Y-%m-%dT%H:%M')
     return time_finish.strftime('%Y-%m-%d')
 
@@ -42,6 +44,7 @@ class RuDateTimeParser:
         print(self._tokenized, '   ', self._text_splitted, '   ', end='')
         collapsed = self.collapse(parsed=parsed)
         print(collapsed)
+        return collapsed
 
     def collapse(self, parsed):
         i: int = 0
@@ -49,8 +52,13 @@ class RuDateTimeParser:
         delta_time: Optional[datetime.timedelta] = None
         has_initial_time = False
         with_hm = False
+        is_period = False
+        # print('')
+        # print('')
+        # print(parsed)
         while (i < len_p):
             count_non_time = 0
+            # print('|||', parsed[i][0], '|||')
             while i < len_p and parsed[i][0] == '_':
                 count_non_time += 1
                 i += 1
@@ -64,12 +72,25 @@ class RuDateTimeParser:
                 has_initial_time = True
             if parsed[i][2]:
                 with_hm = True
+            if not is_period:
+                is_period = parsed[i][3]
             delta_time += parsed[i][0]
-            i += 1
+            i += (1 + parsed[i][1])
 
         if delta_time is None:
             return 'NONE'
+        if is_period:
+            return self.period_handler(self._initial_time + delta_time, with_hm)
         return get_str_time_formatted(self._initial_time + delta_time, with_hm=with_hm)
+
+    def period_handler(self, time, with_hm):
+        part_1 = get_str_time_formatted(time, with_hm=with_hm)
+        if with_hm:
+            time += datetime.timedelta(minutes=1)
+        else:
+            time += datetime.timedelta(days=1)
+        part_2 = get_str_time_formatted(time, with_hm=with_hm)
+        return f'{part_1} - {part_2}'
 
     def covert_string_to_tokens(self):
         cur_index = 0
@@ -140,6 +161,8 @@ class RuDateTimeParser:
                 answer += '#'
             elif splitted == 'и':
                 answer += 'N'
+            elif has_one_of_lemmas(splitted, period_keyword):
+                answer += 'p'
             else:
                 answer += '_'
             cur_index += 1
