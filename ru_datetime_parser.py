@@ -1,12 +1,13 @@
 import re
 import datetime
-from pattern_handlers.time_handlers import handle_time_patterns
+from typing import Optional
+
+from dateutil import relativedelta
+from word2number import extractor
+
+from time_handlers import handle_time_patterns
 from sets import *
 
-
-from word2number import extractor
-from typing import Optional
-from dateutil import relativedelta
 
 def replace_char_numbers_to_digits(initial_string: str) -> str:
     extractor_obj = extractor.NumberExtractor()
@@ -15,8 +16,6 @@ def replace_char_numbers_to_digits(initial_string: str) -> str:
 
 def get_str_time_formatted(time_finish, with_hm=True):
     if with_hm:
-        if time_finish.hour < 10:
-            return time_finish.strftime('%Y-%m-%dT%#H:%M')
         return time_finish.strftime('%Y-%m-%dT%H:%M')
     return time_finish.strftime('%Y-%m-%d')
 
@@ -35,13 +34,17 @@ class RuDateTimeParser:
         self._is_period = False
         self._string_at_start = string_at_start
         self._parse_ready_str = replace_char_numbers_to_digits(string_at_start.lower())
+        self._parse_ready_str = re.sub('[^a-zA-ZА-Яа-я0-9]', ' ', self._parse_ready_str)
+        print(self._parse_ready_str)
+        # self._text_splitted = [re.sub('[^a-zA-ZА-Яа-я0-9]', ' ', splitted)  # remove everything except letters and digits
+        #                        for splitted in self._parse_ready_str.split()]
         self._text_splitted = self._parse_ready_str.split()
         self._tokenized = self.covert_string_to_tokens()
         self._initial_time = initial_time
         self._max_collapse_distance = max_collapse_distance
 
     def parse_text(self):
-        parsed = handle_time_patterns(self._text_splitted, self._tokenized)
+        parsed = handle_time_patterns(self._text_splitted, self._tokenized, self._initial_time)
         print(self._tokenized, '   ', self._text_splitted, '   ', end='')
         collapsed = self.collapse(parsed=parsed)
         print(collapsed)
@@ -54,16 +57,18 @@ class RuDateTimeParser:
         has_initial_time = False
         with_hm = False
         is_period = False
-        # print('')
-        # print('')
         print(parsed)
-        while (i < len_p):
+        time_time = None
+        while i < len_p:
             count_non_time = 0
             # print('|||', parsed[i][0], '|||')
             while i < len_p and parsed[i][0] == '_':
                 count_non_time += 1
                 i += 1
             if count_non_time > self._max_collapse_distance:
+                break
+            if type(parsed[i][0]) is datetime.datetime:
+                time_time = parsed[i][0]
                 break
             if type(parsed[i][0]) not in (datetime.timedelta, relativedelta.relativedelta):
                 raise Exception
@@ -79,7 +84,8 @@ class RuDateTimeParser:
                 is_period = parsed[i][3]
             # print(delta_time)
             i += (1 + parsed[i][1])
-
+        if time_time:
+            return get_str_time_formatted(time_time, with_hm=with_hm)
         if delta_time is None:
             return 'NONE'
         if is_period:
@@ -88,10 +94,10 @@ class RuDateTimeParser:
 
     def period_handler(self, time, with_hm):
         part_1 = get_str_time_formatted(time, with_hm=with_hm)
-        if with_hm:
-            time += datetime.timedelta(minutes=1)
-        else:
-            time += datetime.timedelta(days=1)
+        # if with_hm:
+        #     time += datetime.timedelta(minutes=1)
+        # else:
+        #     time += datetime.timedelta(days=1)
         part_2 = get_str_time_formatted(time, with_hm=with_hm)
         return f'{part_1} - {part_2}'
 
@@ -104,7 +110,7 @@ class RuDateTimeParser:
                 answer += 'Y'
             elif has_one_of_lemmas(splitted, months):
                 answer += 'M'
-            elif has_one_of_lemmas(splitted, weeks):
+            elif has_one_of_lemmas(splitted, week_days):
                 answer += 'D'
             elif has_one_of_lemmas(splitted, back_time_keyword):
                 answer += 'b'
@@ -138,6 +144,8 @@ class RuDateTimeParser:
                 answer += '5'
             elif has_one_of_lemmas(splitted, ff_day_keyword):
                 answer += '6'
+            elif has_one_of_lemmas(splitted, fff_day_keyword):
+                answer += '7'
             elif has_one_of_lemmas(splitted, morning_keyword):
                 answer += 'r'
             elif has_one_of_lemmas(splitted, noon_keyword):

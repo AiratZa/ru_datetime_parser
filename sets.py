@@ -8,6 +8,7 @@ months = {
     'фев': tuple(i.word for i in morph.parse('февраль')[0].lexeme),
     'мар': tuple(i.word for i in morph.parse('март')[0].lexeme),
     'апр': tuple(i.word for i in morph.parse('апрель')[0].lexeme),
+    'май': tuple(i.word for i in morph.parse('май')[0].lexeme),
     'июн': tuple(i.word for i in morph.parse('июнь')[0].lexeme),
     'июл': tuple(i.word for i in morph.parse('июль')[0].lexeme),
     'авг': tuple(i.word for i in morph.parse('август')[0].lexeme),
@@ -17,7 +18,7 @@ months = {
     'дек': tuple(i.word for i in morph.parse('декабрь')[0].lexeme),
 }
 
-weeks = {
+week_days = {
     'пн': tuple(i.word for i in morph.parse('понедельник')[0].lexeme),
     'вт': tuple(i.word for i in morph.parse('вторник')[0].lexeme),
     'ср': tuple(i.word for i in morph.parse('среда')[0].lexeme),
@@ -30,6 +31,8 @@ weeks = {
 back_time_keyword = {
     'тому назад': ('тому назад', ),
     'назад': ('назад', ),
+    'ранее': ('ранее', ),
+    'раньше': ('раньше',),
 }
 
 adj_back_time_keyword = {
@@ -57,6 +60,7 @@ adj_future_time_keyword = {
     'грядущий': tuple(i.word for i in morph.parse('грядущий')[0].lexeme),
     'следующий': tuple(i.word for i in morph.parse('следующий')[0].lexeme),
     'будущий': tuple(i.word for i in morph.parse('будущий')[0].lexeme),
+    'завтрашний': tuple(i.word for i in morph.parse('завтрашний')[0].lexeme),
 }
 
 bb_day_keyword = {
@@ -94,6 +98,7 @@ quater_keyword = {
 
 from_keyword = {
     'в': ('в', ),
+    'во': ('во', ),
     'с': ('с', ),
 }
 
@@ -122,10 +127,15 @@ today_day_keyword = {
 
 f_day_keyword = {
     'завтра': tuple(i.word for i in morph.parse('завтра')[0].lexeme),
+    'назавтра': ('назавтра', ),
 }
 
 ff_day_keyword = {
     'послезавтра': tuple(i.word for i in morph.parse('послезавтра')[0].lexeme),
+}
+
+fff_day_keyword = {
+    'послепослезавтра': tuple(i.word for i in morph.parse('послепослезавтра')[0].lexeme),
 }
 
 weekend = {
@@ -148,6 +158,7 @@ hour_keyword = {
 
 day_keyword = {
     'дн': tuple(i.word for i in morph.parse('день')[0].lexeme),
+    'сутки': tuple(i.word for i in morph.parse('сутки')[0].lexeme),
 }
 
 week_keyword = {
