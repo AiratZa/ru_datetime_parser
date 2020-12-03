@@ -35,9 +35,6 @@ class RuDateTimeParser:
         self._string_at_start = string_at_start
         self._parse_ready_str = replace_char_numbers_to_digits(string_at_start.lower())
         self._parse_ready_str = re.sub('[^a-zA-ZА-Яа-я0-9]', ' ', self._parse_ready_str)
-        # print(self._parse_ready_str)
-        # self._text_splitted = [re.sub('[^a-zA-ZА-Яа-я0-9]', ' ', splitted)  # remove everything except letters and digits
-        #                        for splitted in self._parse_ready_str.split()]
         self._text_splitted = self._parse_ready_str.split()
         self._tokenized = self.covert_string_to_tokens()
         self._initial_time = initial_time
@@ -80,14 +77,6 @@ class RuDateTimeParser:
                 raise Exception
             # if not has_initial_time:
             time_objs_list.append(('deltatime', parsed[i][0], True if parsed[i][2] else False, parsed[i][3]))
-            # delta_time =
-            #     has_initial_time = True
-            # else:
-            #     delta_time += parsed[i][0]
-            # if parsed[i][2]:
-            #     with_hm = True
-            # if not is_period:
-            #     is_period = parsed[i][3]
             i += 1
         return time_objs_list
 
