@@ -5,7 +5,7 @@ from typing import Optional
 from dateutil import relativedelta
 from word2number import extractor
 
-from time_handlers import handle_time_patterns
+from time_handlers import handle_time_patterns, OwnTimeClass
 from sets import *
 
 
@@ -35,7 +35,7 @@ class RuDateTimeParser:
         self._string_at_start = string_at_start
         self._parse_ready_str = replace_char_numbers_to_digits(string_at_start.lower())
         self._parse_ready_str = re.sub('[^a-zA-ZА-Яа-я0-9]', ' ', self._parse_ready_str)
-        print(self._parse_ready_str)
+        # print(self._parse_ready_str)
         # self._text_splitted = [re.sub('[^a-zA-ZА-Яа-я0-9]', ' ', splitted)  # remove everything except letters and digits
         #                        for splitted in self._parse_ready_str.split()]
         self._text_splitted = self._parse_ready_str.split()
@@ -45,20 +45,24 @@ class RuDateTimeParser:
 
     def parse_text(self):
         parsed = handle_time_patterns(self._text_splitted, self._tokenized, self._initial_time)
-        print(self._tokenized, '   ', self._text_splitted, '   ', end='')
-        collapsed = self.collapse(parsed=parsed)
-        print(collapsed)
+        print(self._tokenized, '   ', self._text_splitted)
+        tranformed_to_time_obj_groups = self.transform_to_time_objs_groups(parsed=parsed)
+        # print(tranformed_to_time_obj_groups)
+        collapsed = self.collapse_grouped_objs(tranformed_to_time_obj_groups)
+        print(f'{collapsed=}')
         return collapsed
 
-    def collapse(self, parsed):
+
+    def transform_to_time_objs_groups(self, parsed) -> list:
         i: int = 0
         len_p = len(parsed)
         delta_time: Optional[datetime.timedelta] = None
-        has_initial_time = False
+        # has_initial_time = False
         with_hm = False
         is_period = False
-        print(parsed)
+        # print(parsed)
         time_time = None
+        time_objs_list = []
         while i < len_p:
             count_non_time = 0
             # print('|||', parsed[i][0], '|||')
@@ -69,30 +73,67 @@ class RuDateTimeParser:
                 break
             if type(parsed[i][0]) is datetime.datetime:
                 time_time = parsed[i][0]
-                break
-            if type(parsed[i][0]) not in (datetime.timedelta, relativedelta.relativedelta):
+                i += 1
+                time_objs_list.append(('datetime', time_time, False))
+                continue
+            if type(parsed[i][0]) not in (datetime.timedelta, relativedelta.relativedelta, OwnTimeClass):
                 raise Exception
-                # return 'BREAK'
-            if not has_initial_time:
-                delta_time = parsed[i][0]
-                has_initial_time = True
-            else:
-                delta_time += parsed[i][0]
-            if parsed[i][2]:
-                with_hm = True
-            if not is_period:
-                is_period = parsed[i][3]
-            # print(delta_time)
-            i += (1 + parsed[i][1])
-        if time_time:
-            return get_str_time_formatted(time_time, with_hm=with_hm)
-        if delta_time is None:
-            return 'NONE'
-        if is_period:
-            return self.period_handler(self._initial_time + delta_time, with_hm)
-        return get_str_time_formatted(self._initial_time + delta_time, with_hm=with_hm)
+            # if not has_initial_time:
+            time_objs_list.append(('deltatime', parsed[i][0], True if parsed[i][2] else False, parsed[i][3]))
+            # delta_time =
+            #     has_initial_time = True
+            # else:
+            #     delta_time += parsed[i][0]
+            # if parsed[i][2]:
+            #     with_hm = True
+            # if not is_period:
+            #     is_period = parsed[i][3]
+            i += 1
+        return time_objs_list
 
-    def period_handler(self, time, with_hm):
+    def collapse_grouped_objs(self, tranformed_to_time_obj_groups):
+        datetime_objs = [time for time in tranformed_to_time_obj_groups if time[0] == 'datetime']
+        deltatime_objs = [time for time in tranformed_to_time_obj_groups if time[0] == 'deltatime']
+        print(deltatime_objs)
+        if (not len(datetime_objs)) and (not len(deltatime_objs)):
+            return 'NONE!'
+        initial_time: datetime.datetime = None
+        time_delta: OwnTimeClass = None
+        with_hm = False
+        print(datetime_objs)
+        if len(datetime_objs):
+            for i in datetime_objs:
+                if not initial_time:
+                    initial_time = i[1]
+                else:
+                    initial_time += i[1]
+                if not with_hm:
+                    with_hm = i[2]
+        # print(initial_time)
+        if not len(deltatime_objs):
+            return get_str_time_formatted(initial_time, with_hm=with_hm)
+
+        if not initial_time:
+            initial_time = self._initial_time
+
+        for i in deltatime_objs:
+            print('\n\n', )
+            if i[1].weekday and i[1].relative == 0:
+                continue
+            if time_delta is None:
+                time_delta = i[1]
+            else:
+                time_delta += i[1]
+            if not with_hm:
+                with_hm = i[2]
+
+        # initial_time += time_delta
+        # if is_period:
+        #     return self.period_handler(self._initial_time + delta_time, with_hm)
+        return get_str_time_formatted(initial_time, with_hm=with_hm)
+
+    @staticmethod
+    def period_handler(time, with_hm):
         part_1 = get_str_time_formatted(time, with_hm=with_hm)
         # if with_hm:
         #     time += datetime.timedelta(minutes=1)

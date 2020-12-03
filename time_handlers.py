@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any
+from typing import Any, Optional
 
 from abstract_handler import AbstractHandler
 
@@ -57,7 +57,6 @@ class DaysMonthHandler(AbstractHandler):
             day_nbr = 0
             month_id = 1
             result = result.group(0)
-            print(f'{result=} {splitted_text=}')
             if result[i:].startswith('1_'):
                 day_nbr = int(re.match(r'^\d+', splitted_text[0]).group(0))
                 i += 2
@@ -238,6 +237,12 @@ class NowHandler(AbstractHandler):
         return super().handle(tokenized, splitted_text)
 
 
+class OwnTimeClass:
+
+    def __init__(self, relative=None, weekday=None):
+        self.relative: Optional[int] = relative
+        self.weekday: int = weekday
+
 class DayOfWeekHandler(AbstractHandler):
 
     def __init__(self, initial_time):
@@ -266,8 +271,9 @@ class DayOfWeekHandler(AbstractHandler):
                 day_of_week = SU
             if 'x' in result:
                 return relativedelta(weekday=day_of_week), len(result), False, is_period
-
-            return relativedelta(weekday=day_of_week), len(result), False, is_period
+            elif 'u' in result:
+                return OwnTimeClass(relative=0, weekday=day_of_week), len(result), False, is_period
+            return OwnTimeClass(), len(result), False, is_period
         return super().handle(tokenized, splitted_text)
 
 

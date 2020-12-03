@@ -16,7 +16,7 @@ class TestSum(unittest.TestCase):
             data = list(reader)
         firstline = True
         self.testsLength = len(data) - 1
-        for row in data[0:50]:
+        for row in data[54:56]:
             if firstline:    #skip first line
                 firstline = False
                 continue
@@ -41,41 +41,8 @@ class TestSum(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    # unittest.main()
 
-    # inst = RuDateTimeParser('через год и 1 день 1 минуту', )
-    # answer = inst.parse_text()
+    inst = RuDateTimeParser('В эту среду, 23 ноября', )
+    answer = inst.parse_text()
 
-    # with open('test_file.csv', newline='', encoding="utf8") as f:
-    #     reader = csv.reader(f)
-    #     data = list(reader)
-    # firstline = True
-    # for row in data[9:20]:
-    #     if firstline:  # skip first line
-    #         firstline = False
-    #         continue
-    #     print(row[1], end='   |||   ')
-    #     inst = RuDateTimeParser(row[0], initial_time=datetime.datetime(year=2020,
-    #                                                                    month=11,
-    #                                                                    day=27,
-    #                                                                    hour=2,
-    #                                                                    minute=30))
-    #     answer = inst.parse_text()
-
-
-
-# initial_time=datetime.datetime(year=2020,
-#                                                             month=11,
-#                                                             day=27,
-#                                                             hour=2,
-#                                                             minute=30)
-
-# import pandas as pd
-# from ru_datetime_parser import RuDateTimeParser
-
-# if __name__ == '__main__':
-    # dataset = pd.read_csv('retropress/srcs.csv', delimiter=',').values.tolist()
-    #
-    # for row in dataset[:10]:
-    #     inst = RuDateTimeParser(row[0])
-    #     inst.parse_text()
